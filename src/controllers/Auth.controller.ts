@@ -32,8 +32,6 @@ export const registerUser = async (req: Request, res: Response) => {
 
     const token = generateAccessToken({
       id: newUser._id.toString(),
-      email,
-      username,
     });
 
     return successResponse(
@@ -79,8 +77,6 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const token = generateAccessToken({
       id: user._id.toString(),
-      email: user.email,
-      username: user.username,
     });
 
     return successResponse(res, "Login successful", {

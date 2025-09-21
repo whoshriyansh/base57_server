@@ -25,7 +25,6 @@ const TaskSchema = new Schema<ITask>(
     },
     deadline: {
       type: Date,
-      required: true,
     },
     priority: {
       type: [String],

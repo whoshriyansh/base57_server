@@ -4,6 +4,7 @@ import cors from "cors";
 
 import { ConnectDB } from "./db/ConnectDB.js";
 import authRoutes from "./routes/Auth.route.js";
+import taskRoutes from "./routes/Task.route.js";
 
 dotenv.config();
 const app = express();
@@ -25,6 +26,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/task", taskRoutes);
 
 app.listen(process.env.PORT || 3000, () => {
   ConnectDB();
