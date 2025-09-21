@@ -1,13 +1,32 @@
 import express from "express";
+import dotenv from "dotenv";
+import cors from "cors";
 
+import { ConnectDB } from "./db/ConnectDB.js";
+import authRoutes from "./routes/Auth.route.js";
+
+dotenv.config();
 const app = express();
-
 app.use(express.json());
 
-app.use("/", (req, res) => {
-  res.send("hello Worls");
+const corsOptions = {
+  credentials: true,
+  origin: ["http://localhost:3000", "http://localhost:8001"],
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+};
+app.use(cors(corsOptions));
+
+app.get("/", (req, res) => {
+  res.send("Hello From the server");
 });
 
-app.listen(8001, () => {
-  console.log("App is listning on PORT 8001");
+app.get("/health", (req, res) => {
+  res.json({ status: "OK" });
+});
+
+app.use("/auth", authRoutes);
+
+app.listen(process.env.PORT || 3000, () => {
+  ConnectDB();
+  console.log(`The app is running on PORT: ${process.env.PORT || 3000}`);
 });
