@@ -11,10 +11,7 @@ export const createTaskSchema = z.object({
     .refine((val) => !val || !isNaN(Date.parse(val)), {
       message: "Invalid date format for deadline",
     }),
-  priority: z
-    .array(z.enum(["low", "medium", "high"]))
-    .optional()
-    .default(["medium"]),
+  priority: z.string().optional(),
   category: z.array(z.string()).optional().default([]),
   completed: z.boolean().optional().default(false),
 });

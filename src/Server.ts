@@ -5,6 +5,8 @@ import cors from "cors";
 import { ConnectDB } from "./db/ConnectDB.js";
 import authRoutes from "./routes/Auth.route.js";
 import taskRoutes from "./routes/Task.route.js";
+import categoryRoutes from "./routes/Category.route.js";
+import priorityRoutes from "./routes/Priority.route.js";
 
 dotenv.config();
 const app = express();
@@ -27,6 +29,8 @@ app.get("/health", (req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/task", taskRoutes);
+app.use("/category", categoryRoutes);
+app.use("/priority", priorityRoutes);
 
 app.listen(process.env.PORT || 3000, () => {
   ConnectDB();

@@ -1,44 +1,26 @@
-import { Document, Schema, Types, model } from "mongoose";
+import { Schema, model, Document, Types } from "mongoose";
+import { type ICategory } from "./Category.model.js";
+import { type IPriority } from "./Priority.model.js";
 
 export interface ITask extends Document {
-  _id: Types.ObjectId;
   createdBy: Types.ObjectId;
   name: string;
   dateTime: Date;
-  deadline: Date;
-  priority: string[];
-  category: string[];
+  deadline?: Date;
+  priority: Types.ObjectId | IPriority;
+  category: Types.ObjectId[] | ICategory[];
   completed: boolean;
 }
 
 const TaskSchema = new Schema<ITask>(
   {
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    dateTime: {
-      type: Date,
-      required: true,
-    },
-    deadline: {
-      type: Date,
-    },
-    priority: {
-      type: [String],
-      enum: ["low", "medium", "high"],
-      default: ["medium"],
-    },
-    category: {
-      type: [String],
-      default: [],
-    },
-    completed: {
-      type: Boolean,
-      default: false,
-    },
+    name: { type: String, required: true, trim: true },
+    dateTime: { type: Date, required: true },
+    deadline: { type: Date },
+    priority: { type: Schema.Types.ObjectId, ref: "Priority" },
+    category: [{ type: Schema.Types.ObjectId, ref: "Category" }],
+    completed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

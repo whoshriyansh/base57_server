@@ -44,8 +44,8 @@ export const createTask = async (req: Request, res: Response) => {
       name,
       dateTime,
       deadline,
-      priority,
-      category,
+      priority: new mongoose.Types.ObjectId(priority),
+      category: category.map((c) => new mongoose.Types.ObjectId(c)),
       completed,
     });
 
@@ -87,11 +87,25 @@ export const editTaskById = async (req: Request, res: Response) => {
       );
     }
 
+    const updateData = { ...req.body };
+
+    if (updateData.priority) {
+      updateData.priority = new mongoose.Types.ObjectId(updateData.priority);
+    }
+
+    if (updateData.category) {
+      updateData.category = updateData.category.map(
+        (c: string) => new mongoose.Types.ObjectId(c)
+      );
+    }
+
     const task = await Task.findOneAndUpdate(
       { _id: id, createdBy: user._id },
-      req.body,
-      { new: true, runValidators: true } // ensures validation rules are applied
-    );
+      updateData,
+      { new: true, runValidators: true }
+    )
+      .populate("priority", "name color")
+      .populate("category", "name emoji");
 
     if (!task) {
       return errorResponse(
@@ -120,7 +134,9 @@ export const getAllTask = async (req: Request, res: Response) => {
   }
 
   try {
-    const tasks = await Task.find({ createdBy: user._id });
+    const tasks = await Task.find({ createdBy: user._id })
+      .populate("priority", "name color")
+      .populate("category", "name emoji");
 
     if (!tasks || tasks.length === 0) {
       return successResponse(res, "No tasks found", [], 200);
@@ -164,7 +180,9 @@ export const getTaskById = async (req: Request, res: Response) => {
       );
     }
 
-    const task = await Task.findOne({ _id: id, createdBy: user._id });
+    const task = await Task.findOne({ _id: id, createdBy: user._id })
+      .populate("priority", "name color")
+      .populate("category", "name emoji");
 
     if (!task) {
       return errorResponse(
@@ -213,7 +231,9 @@ export const deleteTaskById = async (req: Request, res: Response) => {
       );
     }
 
-    const task = await Task.findOneAndDelete({ _id: id, createdBy: user._id });
+    const task = await Task.findOneAndDelete({ _id: id, createdBy: user._id })
+      .populate("priority", "name color")
+      .populate("category", "name emoji");
 
     if (!task) {
       return errorResponse(
@@ -225,84 +245,6 @@ export const deleteTaskById = async (req: Request, res: Response) => {
     }
 
     return successResponse(res, "Task deleted successfully", task, 200);
-  } catch (error: any) {
-    return errorResponse(res, "Internal Server Error", {}, 500);
-  }
-};
-
-export const addTaskCategory = async (req: Request, res: Response) => {
-  const user = req.user as IUser | undefined;
-  if (!user) {
-    return errorResponse(
-      res,
-      "Unauthorized",
-      { message: "Please login again" },
-      401
-    );
-  }
-
-  try {
-    const { id, category } = req.body;
-
-    if (!id) {
-      return errorResponse(
-        res,
-        "Task ID is required",
-        { message: "No task ID was provided" },
-        400
-      );
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return errorResponse(
-        res,
-        "Invalid Task ID",
-        { message: "The provided task ID is not valid" },
-        400
-      );
-    }
-
-    const task = await Task.findOneAndUpdate(
-      { _id: id, createdBy: user._id },
-      { $addToSet: { category: category } }, // prevents duplicate category
-      { new: true }
-    );
-
-    if (!task) {
-      return errorResponse(res, "Task not found or unauthorized", {}, 404);
-    }
-
-    return successResponse(res, "Category added successfully", task, 200);
-  } catch (error: any) {
-    return errorResponse(res, "Internal Server Error", {}, 500);
-  }
-};
-
-export const deleteCategory = async (req: Request, res: Response) => {
-  const user = req.user as IUser | undefined;
-  if (!user) {
-    return errorResponse(
-      res,
-      "Unauthorized",
-      { message: "Please login again" },
-      401
-    );
-  }
-
-  try {
-    const { id, category } = req.body;
-
-    const task = await Task.findOneAndUpdate(
-      { _id: id, createdBy: user._id },
-      { $pull: { category: category } }, // removes category
-      { new: true }
-    );
-
-    if (!task) {
-      return errorResponse(res, "Task not found or unauthorized", {}, 404);
-    }
-
-    return successResponse(res, "Category deleted successfully", task, 200);
   } catch (error: any) {
     return errorResponse(res, "Internal Server Error", {}, 500);
   }

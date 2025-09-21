@@ -1,8 +1,6 @@
 import express, { Router } from "express";
 import {
-  addTaskCategory,
   createTask,
-  deleteCategory,
   deleteTaskById,
   editTaskById,
   getAllTask,
@@ -19,8 +17,5 @@ router.patch("/edit/:id", editTaskById);
 router.get("/all", getAllTask);
 router.get("/getSingle/:id", getTaskById);
 router.delete("/delete/:id", deleteTaskById);
-
-router.post("/addCategory", addTaskCategory);
-router.delete("/deleteCategory", deleteCategory);
 
 export default router;
