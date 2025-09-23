@@ -8,7 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc",
     "start": "node dist/Server.js",
-    "dev": "tsx watch src/Server.ts"
+    "dev": "tsx watch src/Server.ts",
+    "vercel-build": "npm run build"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",

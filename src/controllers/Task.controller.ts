@@ -7,6 +7,7 @@ import {
   type CreateTaskInput,
 } from "../schema/TaskSchema.js";
 import mongoose from "mongoose";
+import { format } from "date-fns";
 
 export const createTask = async (req: Request, res: Response) => {
   const user = req.user as IUser;
@@ -42,14 +43,22 @@ export const createTask = async (req: Request, res: Response) => {
     const newTask = await Task.create({
       createdBy: user._id,
       name,
-      dateTime,
-      deadline,
+      dateTime: new Date(dateTime),
+      deadline: deadline ? new Date(deadline) : undefined,
       priority: new mongoose.Types.ObjectId(priority),
       category: category.map((c) => new mongoose.Types.ObjectId(c)),
       completed,
     });
 
-    return successResponse(res, "Task created successfully", newTask, 201);
+    const responseTask = {
+      ...newTask.toObject(),
+      dateTime: format(new Date(newTask.dateTime), "yyyy-MM-dd"),
+      deadline: newTask.deadline
+        ? format(new Date(newTask.deadline), "yyyy-MM-dd")
+        : null,
+    };
+
+    return successResponse(res, "Task created successfully", responseTask, 201);
   } catch (error: any) {
     return errorResponse(res, "Internal Server Error", {}, 500);
   }
@@ -99,6 +108,14 @@ export const editTaskById = async (req: Request, res: Response) => {
       );
     }
 
+    if (updateData.dateTime) {
+      updateData.dateTime = new Date(updateData.dateTime);
+    }
+
+    if (updateData.deadline) {
+      updateData.deadline = new Date(updateData.deadline);
+    }
+
     const task = await Task.findOneAndUpdate(
       { _id: id, createdBy: user._id },
       updateData,
@@ -116,7 +133,15 @@ export const editTaskById = async (req: Request, res: Response) => {
       );
     }
 
-    return successResponse(res, "Task updated successfully", task, 200);
+    const responseTask = {
+      ...task.toObject(),
+      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      deadline: task.deadline
+        ? format(new Date(task.deadline), "yyyy-MM-dd")
+        : null,
+    };
+
+    return successResponse(res, "Task updated successfully", responseTask, 200);
   } catch (error: any) {
     return errorResponse(res, "Internal Server Error", {}, 500);
   }
@@ -134,7 +159,27 @@ export const getAllTask = async (req: Request, res: Response) => {
   }
 
   try {
-    const tasks = await Task.find({ createdBy: user._id })
+    const { category, priority, deadline } = req.query;
+
+    const query: any = { createdBy: user._id };
+
+    if (category) {
+      query.category = new mongoose.Types.ObjectId(category as string);
+    }
+
+    if (priority) {
+      query.priority = new mongoose.Types.ObjectId(priority as string);
+    }
+
+    if (deadline) {
+      const date = new Date(deadline as string);
+      query.dateTime = {
+        $gte: new Date(date.setHours(0, 0, 0, 0)),
+        $lte: new Date(date.setHours(23, 59, 59, 999)),
+      };
+    }
+
+    const tasks = await Task.find(query)
       .populate("priority", "name color")
       .populate("category", "name emoji");
 
@@ -142,7 +187,20 @@ export const getAllTask = async (req: Request, res: Response) => {
       return successResponse(res, "No tasks found", [], 200);
     }
 
-    return successResponse(res, "Tasks fetched successfully", tasks, 200);
+    const formattedTasks = tasks.map((task) => ({
+      ...task.toObject(),
+      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      deadline: task.deadline
+        ? format(new Date(task.deadline), "yyyy-MM-dd")
+        : null,
+    }));
+
+    return successResponse(
+      res,
+      "Tasks fetched successfully",
+      formattedTasks,
+      200
+    );
   } catch (error: any) {
     return errorResponse(res, "Internal Server Error", {}, 500);
   }
@@ -193,7 +251,15 @@ export const getTaskById = async (req: Request, res: Response) => {
       );
     }
 
-    return successResponse(res, "Task fetched successfully", task, 200);
+    const responseTask = {
+      ...task.toObject(),
+      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      deadline: task.deadline
+        ? format(new Date(task.deadline), "yyyy-MM-dd")
+        : null,
+    };
+
+    return successResponse(res, "Task fetched successfully", responseTask, 200);
   } catch (error: any) {
     return errorResponse(res, "Internal Server Error", {}, 500);
   }
@@ -244,7 +310,15 @@ export const deleteTaskById = async (req: Request, res: Response) => {
       );
     }
 
-    return successResponse(res, "Task deleted successfully", task, 200);
+    const responseTask = {
+      ...task.toObject(),
+      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      deadline: task.deadline
+        ? format(new Date(task.deadline), "yyyy-MM-dd")
+        : null,
+    };
+
+    return successResponse(res, "Task deleted successfully", responseTask, 200);
   } catch (error: any) {
     return errorResponse(res, "Internal Server Error", {}, 500);
   }

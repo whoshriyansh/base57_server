@@ -7,6 +7,34 @@ import {
 } from "../schema/CategorySchema.js";
 import mongoose from "mongoose";
 
+export const getCategories = async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    return errorResponse(
+      res,
+      "Unauthorized",
+      { message: "Login required" },
+      401
+    );
+  }
+
+  try {
+    const categories = await Category.find({ createdBy: user._id });
+
+    if (!categories || categories.length === 0) {
+      return successResponse(res, "No categories found", [], 200);
+    }
+
+    return successResponse(
+      res,
+      "Priority created successfully",
+      categories,
+      201
+    );
+  } catch (error) {}
+  return errorResponse(res, "Internal Server Error", {}, 500);
+};
+
 export const createCategory = async (req: Request, res: Response) => {
   const user = req.user;
   if (!user) {

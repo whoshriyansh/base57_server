@@ -7,6 +7,34 @@ import {
 } from "../schema/PriorityScheme.js";
 import mongoose from "mongoose";
 
+export const getPriorities = async (req: Request, res: Response) => {
+  const user = req.user;
+  if (!user) {
+    return errorResponse(
+      res,
+      "Unauthorized",
+      { message: "Login required" },
+      401
+    );
+  }
+
+  try {
+    const priorities = await Priority.find({ createdBy: user._id });
+
+    if (!priorities || priorities.length === 0) {
+      return successResponse(res, "No priorities found", [], 200);
+    }
+
+    return successResponse(
+      res,
+      "Priority created successfully",
+      priorities,
+      201
+    );
+  } catch (error) {}
+  return errorResponse(res, "Internal Server Error", {}, 500);
+};
+
 export const createPriortity = async (req: Request, res: Response) => {
   const user = req.user;
   if (!user) {
