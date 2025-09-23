@@ -1,3 +1,4 @@
+// src/Server.ts
 import express from "express";
 import dotenv from "dotenv";
 
@@ -26,7 +27,13 @@ app.use("/category", categoryRoutes);
 app.use("/priority", priorityRoutes);
 app.use("/user", useroutes);
 
-app.listen(process.env.PORT || 3000, () => {
-  ConnectDB();
-  console.log(`The app is running on PORT: ${process.env.PORT || 3000}`);
-});
+ConnectDB();
+
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`The app is running on PORT: ${PORT}`);
+  });
+}
+
+export default app;
