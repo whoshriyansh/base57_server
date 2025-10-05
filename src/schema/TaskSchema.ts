@@ -2,9 +2,8 @@ import { z } from "zod";
 
 export const createTaskSchema = z.object({
   name: z.string().min(1, { message: "Task name is required" }),
-  dateTime: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid date format for dateTime",
-  }),
+  hours: z.coerce.date().optional(),
+  totalHours: z.coerce.date().optional(),
   deadline: z
     .string()
     .optional()
@@ -17,3 +16,10 @@ export const createTaskSchema = z.object({
 });
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+
+export const editTaskSchema = z.object({
+  hours: z.coerce.date().optional(),
+  totalHours: z.coerce.date().optional(),
+});
+
+export type EditTaskInput = z.infer<typeof editTaskSchema>;

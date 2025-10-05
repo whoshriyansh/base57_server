@@ -5,7 +5,8 @@ import { type IPriority } from "./Priority.model.js";
 export interface ITask extends Document {
   createdBy: Types.ObjectId;
   name: string;
-  dateTime: Date;
+  hours?: Date;
+  totalHours?: Date;
   deadline?: Date;
   priority: Types.ObjectId | IPriority;
   category: Types.ObjectId[] | ICategory[];
@@ -16,7 +17,8 @@ const TaskSchema = new Schema<ITask>(
   {
     createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true, trim: true },
-    dateTime: { type: Date, required: true },
+    hours: { type: Date },
+    totalHours: { type: Date },
     deadline: { type: Date },
     priority: { type: Schema.Types.ObjectId, ref: "Priority" },
     category: [{ type: Schema.Types.ObjectId, ref: "Category" }],

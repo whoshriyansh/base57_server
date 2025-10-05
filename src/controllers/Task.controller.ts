@@ -4,6 +4,8 @@ import { Task } from "../models/Task.model.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import {
   createTaskSchema,
+  editTaskSchema,
+  type EditTaskInput,
   type CreateTaskInput,
 } from "../schema/TaskSchema.js";
 import mongoose from "mongoose";
@@ -37,13 +39,14 @@ export const createTask = async (req: Request, res: Response) => {
       );
     }
 
-    const { name, dateTime, deadline, priority, category, completed } =
+    const { name, hours, totalHours, deadline, priority, category, completed } =
       parsed.data as CreateTaskInput;
 
     const newTask = await Task.create({
       createdBy: user._id,
       name,
-      dateTime: new Date(dateTime),
+      hours,
+      totalHours,
       deadline: deadline ? new Date(deadline) : undefined,
       priority: new mongoose.Types.ObjectId(priority),
       category: category.map((c) => new mongoose.Types.ObjectId(c)),
@@ -51,8 +54,7 @@ export const createTask = async (req: Request, res: Response) => {
     });
 
     const responseTask = {
-      ...newTask.toObject(),
-      dateTime: format(new Date(newTask.dateTime), "yyyy-MM-dd"),
+      ...(newTask.toObject() as any),
       deadline: newTask.deadline
         ? format(new Date(newTask.deadline), "yyyy-MM-dd")
         : null,
@@ -60,6 +62,68 @@ export const createTask = async (req: Request, res: Response) => {
 
     return successResponse(res, "Task created successfully", responseTask, 201);
   } catch (error: any) {
+    return errorResponse(res, "Internal Server Error", {}, 500);
+  }
+};
+
+export const editTask = async (req: Request, res: Response) => {
+  const user = req.user as IUser | undefined;
+  if (!user) {
+    return errorResponse(
+      res,
+      "Unauthorized",
+      { message: "Please login again" },
+      401
+    );
+  }
+
+  try {
+    const { id } = req.params;
+
+    const parsed = createTaskSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return errorResponse(
+        res,
+        "Invalid Format",
+        { message: parsed.error.message },
+        400
+      );
+    }
+
+    const { hours, totalHours } = parsed.data as EditTaskInput;
+
+    if (!hours && !totalHours) {
+      return errorResponse(
+        res,
+        "Invalid Format",
+        { message: "No fields to update" },
+        400
+      );
+    }
+
+    const calculatehoursLeft =
+      totalHours instanceof Date && hours instanceof Date
+        ? new Date(totalHours.getTime() - hours.getTime())
+        : hours;
+
+    const task = await Task.findOneAndUpdate(
+      { _id: id, createdBy: user._id },
+      { hours: calculatehoursLeft },
+      { new: true }
+    );
+
+    if (!task) {
+      return errorResponse(
+        res,
+        "Task not found or unauthorized",
+        { message: "You cannot edit this task" },
+        404
+      );
+    }
+
+    return successResponse(res, "Task updated successfully", task, 200);
+  } catch (error) {
     return errorResponse(res, "Internal Server Error", {}, 500);
   }
 };
@@ -122,7 +186,8 @@ export const editTaskById = async (req: Request, res: Response) => {
       { new: true, runValidators: true }
     )
       .populate("priority", "name color")
-      .populate("category", "name emoji");
+      .populate("category", "name emoji")
+      .lean();
 
     if (!task) {
       return errorResponse(
@@ -134,8 +199,7 @@ export const editTaskById = async (req: Request, res: Response) => {
     }
 
     const responseTask = {
-      ...task.toObject(),
-      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      ...task,
       deadline: task.deadline
         ? format(new Date(task.deadline), "yyyy-MM-dd")
         : null,
@@ -179,17 +243,18 @@ export const getAllTask = async (req: Request, res: Response) => {
       };
     }
 
-    const tasks = await Task.find(query)
+    const tasks = (await (Task as any)
+      .find(query)
       .populate("priority", "name color")
-      .populate("category", "name emoji");
+      .populate("category", "name emoji")
+      .lean()) as any[];
 
     if (!tasks || tasks.length === 0) {
       return successResponse(res, "No tasks found", [], 200);
     }
 
     const formattedTasks = tasks.map((task) => ({
-      ...task.toObject(),
-      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      ...task,
       deadline: task.deadline
         ? format(new Date(task.deadline), "yyyy-MM-dd")
         : null,
@@ -238,9 +303,11 @@ export const getTaskById = async (req: Request, res: Response) => {
       );
     }
 
-    const task = await Task.findOne({ _id: id, createdBy: user._id })
+    const task = (await (Task as any)
+      .findOne({ _id: id, createdBy: user._id })
       .populate("priority", "name color")
-      .populate("category", "name emoji");
+      .populate("category", "name emoji")
+      .lean()) as any;
 
     if (!task) {
       return errorResponse(
@@ -252,8 +319,7 @@ export const getTaskById = async (req: Request, res: Response) => {
     }
 
     const responseTask = {
-      ...task.toObject(),
-      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      ...task,
       deadline: task.deadline
         ? format(new Date(task.deadline), "yyyy-MM-dd")
         : null,
@@ -299,7 +365,8 @@ export const deleteTaskById = async (req: Request, res: Response) => {
 
     const task = await Task.findOneAndDelete({ _id: id, createdBy: user._id })
       .populate("priority", "name color")
-      .populate("category", "name emoji");
+      .populate("category", "name emoji")
+      .lean();
 
     if (!task) {
       return errorResponse(
@@ -311,8 +378,7 @@ export const deleteTaskById = async (req: Request, res: Response) => {
     }
 
     const responseTask = {
-      ...task.toObject(),
-      dateTime: format(new Date(task.dateTime), "yyyy-MM-dd"),
+      ...task,
       deadline: task.deadline
         ? format(new Date(task.deadline), "yyyy-MM-dd")
         : null,
